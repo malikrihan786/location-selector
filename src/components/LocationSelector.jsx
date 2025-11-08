@@ -17,7 +17,7 @@ export default function LocationSelector() {
     const fetchCountries = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://countriesnow.space/api/v0.1/countries");
+        const res = await fetch("https://crio-location-selector.onrender.com/countries");
         const data = await res.json();
         setCountries(data.data.map((item) => item.country));
       } catch (err) {
