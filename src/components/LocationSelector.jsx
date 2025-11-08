@@ -12,19 +12,16 @@ export default function LocationSelector() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Fetch all countries
+  // ✅ Fetch countries
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         setLoading(true);
-        setError("");
-        const response = await fetch("https://countriesnow.space/api/v0.1/countries");
-        if (!response.ok) throw new Error("Failed to fetch countries");
-        const data = await response.json();
-        const countryList = data?.data?.map((item) => item.country).sort();
-        setCountries(countryList || []);
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries");
+        const data = await res.json();
+        setCountries(data.data.map((item) => item.country));
       } catch (err) {
-        console.error("Error fetching countries:", err);
+        console.error(err);
         setError("Failed to load countries");
       } finally {
         setLoading(false);
@@ -33,20 +30,14 @@ export default function LocationSelector() {
     fetchCountries();
   }, []);
 
-  // ✅ Fetch states when a country is selected
+  // ✅ Fetch states when country selected
   useEffect(() => {
     const fetchStates = async () => {
-      if (!selectedCountry) {
-        setStates([]);
-        setCities([]);
-        setSelectedState("");
-        setSelectedCity("");
-        return;
-      }
+      if (!selectedCountry) return;
       try {
         setLoading(true);
         setError("");
-        const response = await fetch(
+        const res = await fetch(
           "https://countriesnow.space/api/v0.1/countries/states",
           {
             method: "POST",
@@ -54,18 +45,10 @@ export default function LocationSelector() {
             body: JSON.stringify({ country: selectedCountry }),
           }
         );
-        if (!response.ok) throw new Error("Failed to fetch states");
-        const data = await response.json();
-        const stateList =
-          data?.data?.states?.map((s) =>
-            typeof s === "string" ? s : s.name
-          ) || [];
-        setStates(stateList);
-        setCities([]);
-        setSelectedState("");
-        setSelectedCity("");
+        const data = await res.json();
+        setStates(data.data.states.map((s) => s.name));
       } catch (err) {
-        console.error("Error fetching states:", err);
+        console.error(err);
         setError("Failed to load states");
       } finally {
         setLoading(false);
@@ -74,18 +57,14 @@ export default function LocationSelector() {
     fetchStates();
   }, [selectedCountry]);
 
-  // ✅ Fetch cities when a state is selected
+  // ✅ Fetch cities when state selected
   useEffect(() => {
     const fetchCities = async () => {
-      if (!selectedCountry || !selectedState) {
-        setCities([]);
-        setSelectedCity("");
-        return;
-      }
+      if (!selectedCountry || !selectedState) return;
       try {
         setLoading(true);
         setError("");
-        const response = await fetch(
+        const res = await fetch(
           "https://countriesnow.space/api/v0.1/countries/state/cities",
           {
             method: "POST",
@@ -96,29 +75,31 @@ export default function LocationSelector() {
             }),
           }
         );
-        if (!response.ok) throw new Error("Failed to fetch cities");
-        const data = await response.json();
-        const cityList = Array.isArray(data?.data) ? data.data : [];
-        setCities(cityList);
+        const data = await res.json();
+        setCities(data.data);
       } catch (err) {
-        console.error("Error fetching cities:", err);
+        console.error(err);
         setError("Failed to load cities");
       } finally {
         setLoading(false);
       }
     };
     fetchCities();
-  }, [selectedState, selectedCountry]);
+  }, [selectedState]);
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>🌍 Select Location</h2>
+      <h2 style={styles.heading}>Select Location</h2>
 
       <div style={styles.dropdownContainer}>
         {/* Country Dropdown */}
         <select
           value={selectedCountry}
-          onChange={(e) => setSelectedCountry(e.target.value)}
+          onChange={(e) => {
+            setSelectedCountry(e.target.value);
+            setSelectedState("");
+            setSelectedCity("");
+          }}
           style={styles.select}
         >
           <option value="">Select Country</option>
@@ -132,7 +113,10 @@ export default function LocationSelector() {
         {/* State Dropdown */}
         <select
           value={selectedState}
-          onChange={(e) => setSelectedState(e.target.value)}
+          onChange={(e) => {
+            setSelectedState(e.target.value);
+            setSelectedCity("");
+          }}
           disabled={!selectedCountry}
           style={{
             ...styles.select,
@@ -166,12 +150,12 @@ export default function LocationSelector() {
         </select>
       </div>
 
-      {loading && <p style={{ marginTop: "10px" }}>Loading...</p>}
-      {error && <p style={{ color: "red", marginTop: "10px" }}>{error}</p>}
+      {loading && <p>Loading...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {selectedCity && selectedState && selectedCountry && (
-        <h3 style={{ marginTop: "20px" }}>
-          ✅ You selected {selectedCity}, {selectedState}, {selectedCountry}
+      {selectedCity && (
+        <h3>
+          You selected {selectedCity}, {selectedState}, {selectedCountry}
         </h3>
       )}
     </div>
