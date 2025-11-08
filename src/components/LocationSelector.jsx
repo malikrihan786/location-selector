@@ -12,7 +12,7 @@ export default function LocationSelector() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Fetch countries
+  // ✅ Fetch all countries
   useEffect(() => {
     const fetchCountries = async () => {
       try {
@@ -21,7 +21,7 @@ export default function LocationSelector() {
         const data = await res.json();
         setCountries(data.data.map((item) => item.country));
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching countries:", err);
         setError("Failed to load countries");
       } finally {
         setLoading(false);
@@ -30,10 +30,16 @@ export default function LocationSelector() {
     fetchCountries();
   }, []);
 
-  // ✅ Fetch states when country selected
+  // ✅ Fetch states when country is selected
   useEffect(() => {
     const fetchStates = async () => {
-      if (!selectedCountry) return;
+      if (!selectedCountry) {
+        setStates([]);
+        setSelectedState("");
+        setCities([]);
+        setSelectedCity("");
+        return;
+      }
       try {
         setLoading(true);
         setError("");
@@ -48,7 +54,7 @@ export default function LocationSelector() {
         const data = await res.json();
         setStates(data.data.states.map((s) => s.name));
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching states:", err);
         setError("Failed to load states");
       } finally {
         setLoading(false);
@@ -57,10 +63,14 @@ export default function LocationSelector() {
     fetchStates();
   }, [selectedCountry]);
 
-  // ✅ Fetch cities when state selected
+  // ✅ Fetch cities when state is selected
   useEffect(() => {
     const fetchCities = async () => {
-      if (!selectedCountry || !selectedState) return;
+      if (!selectedCountry || !selectedState) {
+        setCities([]);
+        setSelectedCity("");
+        return;
+      }
       try {
         setLoading(true);
         setError("");
@@ -76,9 +86,9 @@ export default function LocationSelector() {
           }
         );
         const data = await res.json();
-        setCities(data.data);
+        setCities(data.data || []);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching cities:", err);
         setError("Failed to load cities");
       } finally {
         setLoading(false);
@@ -94,6 +104,7 @@ export default function LocationSelector() {
       <div style={styles.dropdownContainer}>
         {/* Country Dropdown */}
         <select
+          id="country-dropdown"
           value={selectedCountry}
           onChange={(e) => {
             setSelectedCountry(e.target.value);
@@ -112,6 +123,7 @@ export default function LocationSelector() {
 
         {/* State Dropdown */}
         <select
+          id="state-dropdown"
           value={selectedState}
           onChange={(e) => {
             setSelectedState(e.target.value);
@@ -133,6 +145,7 @@ export default function LocationSelector() {
 
         {/* City Dropdown */}
         <select
+          id="city-dropdown"
           value={selectedCity}
           onChange={(e) => setSelectedCity(e.target.value)}
           disabled={!selectedState}
@@ -153,8 +166,8 @@ export default function LocationSelector() {
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {selectedCity && (
-        <h3>
+      {selectedCity && selectedState && selectedCountry && (
+        <h3 style={{ marginTop: "20px" }}>
           You selected {selectedCity}, {selectedState}, {selectedCountry}
         </h3>
       )}
