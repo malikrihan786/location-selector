@@ -18,9 +18,11 @@ export default function LocationSelector() {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch("https://crio-location-selector.onrender.com/countries");
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+        if (!response.ok) throw new Error("Failed to fetch countries");
         const data = await response.json();
-        setCountries(data);
+        const countryList = data?.data?.map((item) => item.country).sort();
+        setCountries(countryList || []);
       } catch (err) {
         console.error("Error fetching countries:", err);
         setError("Failed to load countries");
@@ -44,12 +46,24 @@ export default function LocationSelector() {
       try {
         setLoading(true);
         setError("");
-        const encodedCountry = encodeURIComponent(selectedCountry);
         const response = await fetch(
-          `https://crio-location-selector.onrender.com/country/${encodedCountry}/states`
+          "https://countriesnow.space/api/v0.1/countries/states",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ country: selectedCountry }),
+          }
         );
+        if (!response.ok) throw new Error("Failed to fetch states");
         const data = await response.json();
-        setStates(data);
+        const stateList =
+          data?.data?.states?.map((s) =>
+            typeof s === "string" ? s : s.name
+          ) || [];
+        setStates(stateList);
+        setCities([]);
+        setSelectedState("");
+        setSelectedCity("");
       } catch (err) {
         console.error("Error fetching states:", err);
         setError("Failed to load states");
@@ -71,13 +85,21 @@ export default function LocationSelector() {
       try {
         setLoading(true);
         setError("");
-        const encodedCountry = encodeURIComponent(selectedCountry);
-        const encodedState = encodeURIComponent(selectedState);
         const response = await fetch(
-          `https://crio-location-selector.onrender.com/country/${encodedCountry}/state/${encodedState}/cities`
+          "https://countriesnow.space/api/v0.1/countries/state/cities",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              country: selectedCountry,
+              state: selectedState,
+            }),
+          }
         );
+        if (!response.ok) throw new Error("Failed to fetch cities");
         const data = await response.json();
-        setCities(data);
+        const cityList = Array.isArray(data?.data) ? data.data : [];
+        setCities(cityList);
       } catch (err) {
         console.error("Error fetching cities:", err);
         setError("Failed to load cities");
@@ -86,11 +108,11 @@ export default function LocationSelector() {
       }
     };
     fetchCities();
-  }, [selectedState]);
+  }, [selectedState, selectedCountry]);
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>Select Location</h2>
+      <h2 style={styles.heading}>🌍 Select Location</h2>
 
       <div style={styles.dropdownContainer}>
         {/* Country Dropdown */}
@@ -149,7 +171,7 @@ export default function LocationSelector() {
 
       {selectedCity && selectedState && selectedCountry && (
         <h3 style={{ marginTop: "20px" }}>
-          You selected {selectedCity}, {selectedState}, {selectedCountry}
+          ✅ You selected {selectedCity}, {selectedState}, {selectedCountry}
         </h3>
       )}
     </div>
